@@ -11,11 +11,11 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 def read_root():
     return {"message": "Welcome to the ID classification API"}
 
-@app.post("/predict/")
-async def predict_image(file: UploadFile = File(...)):
+@app.get("/predict/")
+async def predict_image():
     try:
        
-        image = Image.open(io.BytesIO(await file.read()))
+        image = r"C:\Users\21626\Downloads\3_jpg.rf.a1872885a96c65c5ed2322111890c9aa.jpg"
        
         img_class = detect_id(image)
         if  img_class == "id":
