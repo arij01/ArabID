@@ -1,10 +1,12 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from util import detect_id, segment_id
-from PIL import Image
+from util import IDDetector, IDSegmenter
 import pytesseract
 
 
 app = FastAPI()
+# Usage
+detector = IDDetector('best-cls.pt')
+segmenter = IDSegmenter('best-seg.pt')
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 @app.get("/")
@@ -22,17 +24,16 @@ async def predict_image(file: UploadFile = File(...)):
             f.write(image_data)
 
         # Now use the path for processing
-        img_class = detect_id(temp_image_path)
+        img_class = detector.detect(temp_image_path)
         if img_class == "id":
-            seg_img = segment_id(temp_image_path)
+            seg_img = segmenter.segment(temp_image_path)
             if not seg_img:
                 raise HTTPException(status_code=400, detail="No regions detected in the image.")
             results = []
+            custom_config = r'--oem 3 --psm 6'
             for i, seg in enumerate(seg_img):
-                # Ensure that each segment is a PIL image
-                if not isinstance(seg, Image.Image):
-                    raise HTTPException(status_code=400, detail=f"Segment {i+1} is not a valid image object.")
-                text = pytesseract.image_to_string(seg, lang='ara')
+                
+                text = pytesseract.image_to_string(seg, lang='ara+ara_number+ara_combined',config= custom_config )
                 results.append({"segment": i+1, "text": text})
             return {"id informations": results}
         else:
