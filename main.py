@@ -1,13 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from util import IDDetector, IDSegmenter
+from util import IDDetector, IDSegmenter,TextPostProcessor
 import pytesseract
-import re
-import nltk
-nltk.download('stopwords')
-nltk.download('punkt')
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
 
 
 app = FastAPI()
@@ -15,27 +8,8 @@ app = FastAPI()
 detector = IDDetector('classification.pt')
 segmenter = IDSegmenter('segmentation.pt')
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-
-
-def post_process_text(text):
+post_process_text=TextPostProcessor()
     
-    cleaned_text = re.sub(r'[^أ-ي٠-٩\s0-9a-zA-Z]', '', text)
-    
-    
-    cleaned_text = re.sub(r'[\u0610-\u061A\u064B-\u065F]', '', cleaned_text)
-    
-   
-    cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
-    
-
-    tokens = word_tokenize(cleaned_text)
-  
-    stop_words = set(stopwords.words('arabic') + stopwords.words('english'))
-    tokens = [token for token in tokens if token not in stop_words]
-    
-    cleaned_text = ' '.join(tokens)
-  
-    return cleaned_text
 
 @app.get("/")
 def read_root():
@@ -60,7 +34,7 @@ async def predict_image(file: UploadFile = File(...)):
             if not seg_img:
                 raise HTTPException(status_code=400, detail="No regions detected in the image.")
 
-            results = {}
+            results = []
             custom_config = r'--oem 3 --psm 11'
 
             for ordered_class in class_order:
@@ -75,8 +49,8 @@ async def predict_image(file: UploadFile = File(...)):
                             text = pytesseract.image_to_string(seg, lang='ara', config=custom_config)
 
                         print(f"Extracted text for {class_name}: {text}")
-                        cleaned_text = post_process_text(text)
-                        results[class_name] = cleaned_text
+                        cleaned_text = post_process_text.clean_text(text)
+                        results.append(cleaned_text)
                         break  # Move to the next class once found
 
             return {"id informations": results}

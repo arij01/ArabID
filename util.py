@@ -2,6 +2,13 @@ from ultralytics import YOLO
 import numpy as np
 from PIL import Image
 import cv2
+import re
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
 
 class IDDetector:
     def __init__(self, model_path):
@@ -47,3 +54,28 @@ class IDSegmenter:
             class_names.append(self.segmenter.names[int(entry['class_id'])])  # Map class ID to name
 
         return segmented_images, class_names
+class TextPostProcessor:
+    def __init__(self):
+        # Initialize stopwords once during object creation
+        self.stop_words = set(stopwords.words('arabic') + stopwords.words('english'))
+
+    def clean_text(self, text: str) -> str:
+        # Remove unwanted characters (keep Arabic, numbers, and English letters)
+        cleaned_text = re.sub(r'[^أ-ي٠-٩\s0-9a-zA-Z]', '', text)
+        
+        # Remove Arabic diacritics
+        cleaned_text = re.sub(r'[\u0610-\u061A\u064B-\u065F]', '', cleaned_text)
+        
+        # Replace multiple spaces with a single space
+        cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
+        
+        # Tokenize the cleaned text
+        tokens = word_tokenize(cleaned_text)
+        
+        # Remove stopwords (both Arabic and English)
+        tokens = [token for token in tokens if token not in self.stop_words]
+        
+        # Join the tokens back into a single string
+        cleaned_text = ' '.join(tokens)
+        
+        return cleaned_text
