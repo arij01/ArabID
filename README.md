@@ -60,7 +60,8 @@ The API will process the image and return the extracted text from the ID card in
         "منطقة الليدو",
         "المنتزه",
         "الإسكندرية",
+        "7542907 3658463",
         "QW5613784"
     ]
 }
-   ```
+  ```
