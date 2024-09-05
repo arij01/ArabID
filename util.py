@@ -42,33 +42,3 @@ class IDSegmenter:
 
         return segmented_images
 
-class PreprocessImage:
-    def __init__(self, image_path: str):
-        self.image_path = image_path
-        self.image = self._load_image()
-
-    def _load_image(self) -> np.ndarray:
-        """Load the image from the file path."""
-        return cv2.imread(self.image_path)
-
-    def to_grayscale(self) -> np.ndarray:
-        """Convert the image to grayscale."""
-        return cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
-
-    def apply_gaussian_blur(self, image: np.ndarray) -> np.ndarray:
-        """Apply Gaussian Blur to the image."""
-        return cv2.GaussianBlur(image, (5, 5), 0)
-
-    def apply_thresholding(self, image: np.ndarray) -> np.ndarray:
-        """Apply thresholding to convert the image to binary."""
-        _, thresh = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        return thresh
-
-    def preprocess(self) -> np.ndarray:
-        """Apply the full preprocessing pipeline."""
-        gray_image = self.to_grayscale()
-        blurred_image = self.apply_gaussian_blur(gray_image)
-        preprocessed_image = self.apply_thresholding(blurred_image)
-        return preprocessed_image
-
-

@@ -7,9 +7,7 @@ nltk.download('stopwords')
 nltk.download('punkt')
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from collections import defaultdict
-import cv2
-import numpy as np
+
 
 
 app = FastAPI()
@@ -21,10 +19,10 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 
 def post_process_text(text):
     
-    cleaned_text = re.sub(r'[^أ-ي\s]', '', text)
+    #cleaned_text = re.sub(r'[^أ-ي١-٩\s0-9a-zA-Z]', '', text)
     
     
-    cleaned_text = re.sub(r'[\u0610-\u061A\u064B-\u065F]', '', cleaned_text)
+    cleaned_text = re.sub(r'[\u0610-\u061A\u064B-\u065F]', '', text)
     
    
     cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
@@ -32,11 +30,11 @@ def post_process_text(text):
 
     tokens = word_tokenize(cleaned_text)
   
-    stop_words = set(stopwords.words('arabic'))
+    stop_words = set(stopwords.words('arabic') + stopwords.words('english'))
     tokens = [token for token in tokens if token not in stop_words]
     
     cleaned_text = ' '.join(tokens)
-    
+  
     return cleaned_text
 
 @app.get("/")
@@ -62,11 +60,11 @@ async def predict_image(file: UploadFile = File(...)):
             if not seg_img:
                 raise HTTPException(status_code=400, detail="No regions detected in the image.")
             results = []
-            custom_config = r'--oem 3 --psm 11 -c tessedit_char_blacklist=0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            custom_config = r'--oem 3 --psm 11'
 
             for i, seg in enumerate(seg_img):
                 
-                text = pytesseract.image_to_string(seg, lang='ara+ara_number',config= custom_config )
+                text = pytesseract.image_to_string(seg, lang='ara+eng+ara_number',config= custom_config )
                 cleaned_text = post_process_text(text)
                 results.append(cleaned_text)
             return {"id informations": results}
