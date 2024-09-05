@@ -16,16 +16,20 @@ detector = IDDetector('classification.pt')
 segmenter = IDSegmenter('segmentation.pt')
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
+def extract_arabic_hindu_numerals(text):
+    # Extract only Arabic-Hindu numerals (٠١٢٣٤٥٦٧٨٩)
+    numerals = re.findall(r'[٠-٩]+', text)
+    return ' '.join(numerals) if numerals else ""
 
 def post_process_text(text):
     
-    #cleaned_text = re.sub(r'[^أ-ي١-٩\s0-9a-zA-Z]', '', text)
+    cleaned_text = re.sub(r'[^أ-ي١-٩\s0-9a-zA-Z]', '', text)
     
     
-    cleaned_text = re.sub(r'[\u0610-\u061A\u064B-\u065F]', '', text)
+    cleaned_text = re.sub(r'[\u0610-\u061A\u064B-\u065F]', '', cleaned_text)
     
    
-    cleaned_text = re.sub(r'\s+', ' ', cleaned_text)
+    cleaned_text = re.sub(r'\s+', ' ', text)
     
 
     tokens = word_tokenize(cleaned_text)
@@ -60,11 +64,18 @@ async def predict_image(file: UploadFile = File(...)):
             if not seg_img:
                 raise HTTPException(status_code=400, detail="No regions detected in the image.")
             results = []
-            custom_config = r'--oem 3 --psm 11'
+            custom_config = r'--oem 3 --psm 11 '
 
-            for i, seg in enumerate(seg_img):
+            for i, seg in enumerate(seg_img): # or seg_img[1:-1]
                 
                 text = pytesseract.image_to_string(seg, lang='ara+eng+ara_number',config= custom_config )
+                print(text)
+                 
+                # if i == 7:  # Assuming the 'number' segment index or name
+                #     numerals = extract_arabic_hindu_numerals(text)
+                #     print(f"Extracted numerals: {numerals}")  # Debugging output for numerals
+                #     results.append(numerals)
+                
                 cleaned_text = post_process_text(text)
                 results.append(cleaned_text)
             return {"id informations": results}
